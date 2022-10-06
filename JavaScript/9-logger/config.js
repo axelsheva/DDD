@@ -12,7 +12,5 @@ module.exports = {
     encoding: 'base64',
     separator: ':',
   },
-  server: {
-    module: 'http',
-  },
+  transport: 'http',
 };
