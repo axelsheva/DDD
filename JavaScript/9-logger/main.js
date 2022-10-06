@@ -2,8 +2,6 @@
 
 const fsp = require('node:fs').promises;
 const path = require('node:path');
-const wsServer = require('./ws.js');
-const httpServer = require('./http.js');
 const config = require('./config.js');
 const staticServer = require('./static.js');
 const load = require('./load.js');
@@ -12,13 +10,13 @@ const hash = require('./hash.js');
 const logger = require('./logger.js');
 
 const getServer = () => {
-  switch (config.server.module) {
+  switch (config.transport) {
     case 'ws':
-      return wsServer;
+      return require('./ws.js');
     case 'http':
-      return httpServer;
+      return require('./http.js');
     default:
-      return httpServer;
+      return require('./http.js');
   }
 };
 
