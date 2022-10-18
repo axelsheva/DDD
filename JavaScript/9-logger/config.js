@@ -13,4 +13,7 @@ module.exports = {
     separator: ':',
   },
   transport: 'http',
+  logger: {
+    type: 'console',
+  },
 };
