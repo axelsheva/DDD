@@ -12,7 +12,7 @@ import amqp = require('amqp-connection-manager');
 // может иметь встроенную систему обозревателя, или обозреватель может использовать этот класс?
 // ответ должен возвращаться на инстанс который сделал запрос
 
-export class Transport {
+export class TransportQuery {
     private readonly pendingRequestMap: Map<string, PendingRequest>;
     private readonly channelMap: Map<string, amqp.ChannelWrapper>;
     private readonly amqp: amqp.AmqpConnectionManager;
@@ -22,7 +22,7 @@ export class Transport {
     constructor(
         url: string,
         private readonly timeout: number,
-        private readonly service: string,
+        service: string,
     ) {
         this.pendingRequestMap = new Map();
         this.channelMap = new Map();
@@ -98,8 +98,9 @@ export class Transport {
     async call<T>(message: SendMessageArgs): Promise<T> {
         console.log(`[Transport][call]`, message);
 
+        const destination = `${message.service}.rpc.query`;
         const correlationId = randomUUID();
-        const channel = await this.getChannel(message.destination);
+        const channel = await this.getChannel(destination);
 
         return new Promise<T>((resolve, reject) => {
             const flushTimeout = setTimeout(() => {
@@ -123,20 +124,20 @@ export class Transport {
 
             const content: Request = {
                 method: message.method,
-                data: message.data,
+                data: message.args,
             };
 
             channel
-                .sendToQueue(message.destination, content, {
+                .sendToQueue(destination, content, {
                     correlationId,
                     replyTo: this.queryResponseQueueName,
+                    timeout: this.timeout,
                 })
                 .catch(rejectWrapper);
         });
     }
 
-    // Отправляет событие на удаленный сервис не ожидая ответа
-    async event(message: SendMessageArgs) {
-        return;
+    async close() {
+        await this.amqp.close();
     }
 }
