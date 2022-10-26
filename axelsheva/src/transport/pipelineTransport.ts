@@ -45,14 +45,14 @@ export class PipelineTransport {
     // Отправляет запрос на мутацию данных на удаленный сервис
     async call(message: SendMessageArgs): Promise<void> {
         const correlationId = randomUUID(); // нужен ли?
-        const channel = await this.getChannel(message.destination);
+        const channel = await this.getChannel(message.service);
 
         const content: Request = {
             method: message.method,
-            data: message.data,
+            data: message.args,
         };
 
-        const res = await channel.sendToQueue(message.destination, content, {
+        const res = await channel.sendToQueue(message.service, content, {
             correlationId,
             replyTo: this.mutationResponseQueueName,
         });

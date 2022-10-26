@@ -14,10 +14,9 @@ export type Connection = {
 };
 
 export type SendMessageArgs = {
-    // type: 'query' | 'mutation';
-    destination: string;
+    service: string;
     method: string;
-    data: any;
+    args: any;
 };
 
 export type Request = {
@@ -27,6 +26,11 @@ export type Request = {
 
 export type OnRequestCallback = (
     connection: Connection,
+    request: Request,
+) => void;
+
+export type OnEventCallback = (
+    connection: Omit<Connection, 'send'>,
     request: Request,
 ) => void;
 
