@@ -7,6 +7,8 @@ import {
     TransportResponse,
     TransportSuccessResponse,
 } from '../types/transport';
+import { sleep } from '../utils/sleep';
+import { transport } from './transport';
 import amqp = require('amqp-connection-manager');
 
 // может иметь встроенную систему обозревателя, или обозреватель может использовать этот класс?
@@ -15,26 +17,20 @@ import amqp = require('amqp-connection-manager');
 export class TransportQuery {
     private readonly pendingRequestMap: Map<string, PendingRequest>;
     private readonly channelMap: Map<string, amqp.ChannelWrapper>;
-    private readonly amqp: amqp.AmqpConnectionManager;
     private readonly queryResponseQueueName: string;
     private readonly instanceId: string;
+    private responseChannel?: amqp.ChannelWrapper;
 
-    constructor(
-        url: string,
-        private readonly timeout: number,
-        service: string,
-    ) {
+    constructor(private readonly timeout: number, service: string) {
         this.pendingRequestMap = new Map();
         this.channelMap = new Map();
 
         this.instanceId = Date.now().toString();
         this.queryResponseQueueName = `${service}.response.query.${this.instanceId}`;
-
-        this.amqp = amqp.connect(url);
     }
 
     async initialize() {
-        const responseChannel = this.amqp.createChannel({
+        const responseChannel = transport.createChannel({
             json: true,
             setup: (c: Channel) => {
                 return c.assertQueue(this.queryResponseQueueName, {
@@ -70,15 +66,18 @@ export class TransportQuery {
         });
 
         await responseChannel.waitForConnect();
+
+        this.responseChannel = responseChannel;
     }
 
+    // can be race condition for the same queue
     private async getChannel(name: string) {
         const channel = this.channelMap.get(name);
         if (channel) {
             return channel;
         }
 
-        const newChannel = this.amqp.createChannel({
+        const newChannel = transport.createChannel({
             json: true,
             setup: function (c: Channel) {
                 return c.assertQueue(name, {
@@ -137,7 +136,20 @@ export class TransportQuery {
         });
     }
 
+    // must be closed after closing input queue
     async close() {
-        await this.amqp.close();
+        console.log('[TransportQuery][close]');
+
+        while (this.pendingRequestMap.size) {
+            await sleep(200);
+        }
+
+        if (this.responseChannel) {
+            await this.responseChannel.close();
+        }
+
+        await Promise.all(
+            [...this.channelMap.values()].map((channel) => channel.close()),
+        );
     }
 }

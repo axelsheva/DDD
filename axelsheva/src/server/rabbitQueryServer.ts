@@ -4,12 +4,24 @@
 
 import amqp = require('amqp-connection-manager');
 import { OnRequestCallback, Request } from '../types/transport';
+import { sleep } from '../utils/sleep';
 
 export class RabbitQueryServer {
-    constructor(private readonly amqp: amqp.AmqpConnectionManager) {}
+    private inputChannel?: amqp.ChannelWrapper;
+    private outputChannel: amqp.ChannelWrapper;
+    private activeMessages: number;
+
+    constructor(private readonly amqp: amqp.AmqpConnectionManager) {
+        this.outputChannel = this.amqp.createChannel({
+            json: true,
+        });
+
+        this.activeMessages = 0;
+    }
 
     async onRequest(queue: string, callback: OnRequestCallback) {
-        const channel = this.amqp.createChannel({
+        // TODO: split this channel to input and output
+        const inputChannel = this.amqp.createChannel({
             json: true,
             setup: function (channel: amqp.Channel) {
                 return channel.assertQueue(queue, {
@@ -18,12 +30,12 @@ export class RabbitQueryServer {
             },
         });
 
-        await channel.consume(queue, (item) => {
+        await inputChannel.consume(queue, (item) => {
             let message: Omit<Request, 'send'>;
             try {
                 message = JSON.parse(item.content.toString());
             } catch (error) {
-                channel.sendToQueue(
+                this.outputChannel.sendToQueue(
                     item.properties.replyTo,
                     'Invalid arguments',
                 );
@@ -33,10 +45,14 @@ export class RabbitQueryServer {
 
             // TODO: validate message
 
+            this.activeMessages += 1;
+
+            const decreaseActiveMessage = () => (this.activeMessages -= 1);
+
             callback(
                 {
                     send: async (data: any) => {
-                        await channel.sendToQueue(
+                        await this.outputChannel.sendToQueue(
                             item.properties.replyTo,
                             data,
                             {
@@ -45,16 +61,45 @@ export class RabbitQueryServer {
                         );
                     },
                     ack() {
-                        channel.ack(item);
+                        inputChannel.ack(item);
+
+                        decreaseActiveMessage();
                     },
                     nack() {
-                        channel.nack(item);
+                        inputChannel.nack(item);
+
+                        decreaseActiveMessage();
                     },
                 },
                 message,
             );
         });
 
-        await channel.waitForConnect();
+        await inputChannel.waitForConnect();
+
+        this.inputChannel = inputChannel;
+    }
+
+    async close() {
+        console.log('[RabbitQueryServer][close]');
+
+        if (!this.inputChannel) {
+            console.error(
+                '[RabbitQueryServer][close] Input channel is not available',
+            );
+            throw new Error();
+        }
+
+        await this.inputChannel.close();
+
+        while (this.activeMessages > 0) {
+            console.log(
+                `[RabbitQueryServer][close] Active messages: ${this.activeMessages}, wait...`,
+            );
+
+            await sleep(200);
+        }
+
+        await this.outputChannel.close();
     }
 }
