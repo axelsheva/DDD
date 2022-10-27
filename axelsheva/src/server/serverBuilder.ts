@@ -1,5 +1,5 @@
-import amqp from 'amqp-connection-manager';
 import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
+import { transport } from '../transport/transport';
 import { RabbitEventServer } from './rabbitEventServer';
 import { RabbitQueryServer } from './rabbitQueryServer';
 import { Routing, ServerRouting } from './types';
@@ -31,8 +31,6 @@ export const buildQueryServer = async (
         let res;
         try {
             res = await handler(message.data);
-
-            connection.ack();
         } catch (error) {
             // TODO: в зависимости от ошибки нужно выбирать поведение
             connection.nack();
@@ -46,12 +44,19 @@ export const buildQueryServer = async (
         }
 
         try {
+            // TODO: check response
             await connection.send({ data: res });
+
+            connection.ack();
         } catch (error) {
             console.error(`[connection][send] Can not send response`, error);
             return;
         }
     });
+
+    return {
+        close: () => server.close(),
+    };
 };
 
 export const buildEventServer = async (
@@ -86,23 +91,38 @@ export const buildEventServer = async (
             return;
         }
     });
+
+    return {
+        close: () => server.close(),
+    };
 };
 
 export const createServer = async (
     routing: ServerRouting,
-    url: string,
     serviceName: string,
 ) => {
-    const rabbit = amqp.connect(url);
+    const servers: Array<{ close: () => Promise<void> }> = [];
 
     if (routing.query) {
-        await buildQueryServer(routing.query, serviceName, rabbit);
+        const server = await buildQueryServer(
+            routing.query,
+            serviceName,
+            transport,
+        );
+
+        servers.push(server);
     }
     if (routing.event) {
-        await buildEventServer(routing.event, serviceName, rabbit);
+        const server = await buildEventServer(
+            routing.event,
+            serviceName,
+            transport,
+        );
+
+        servers.push(server);
     }
 
     return {
-        close: () => rabbit.close(),
+        close: () => Promise.all(servers.map((server) => server.close())),
     };
 };

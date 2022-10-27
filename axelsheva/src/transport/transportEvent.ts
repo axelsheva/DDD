@@ -1,15 +1,13 @@
 import { Channel } from 'amqp-connection-manager';
 import { Request, SendMessageArgs } from '../types/transport';
+import { transport } from './transport';
 import amqp = require('amqp-connection-manager');
 
 export class TransportEvent {
     private readonly channelMap: Map<string, amqp.ChannelWrapper>;
-    private readonly amqp: amqp.AmqpConnectionManager;
 
-    constructor(url: string) {
+    constructor() {
         this.channelMap = new Map();
-
-        this.amqp = amqp.connect(url);
     }
 
     private async getChannel(name: string) {
@@ -18,7 +16,7 @@ export class TransportEvent {
             return channel;
         }
 
-        const newChannel = this.amqp.createChannel({
+        const newChannel = transport.createChannel({
             json: true,
             setup: function (c: Channel) {
                 return c.assertQueue(name, {
@@ -54,7 +52,12 @@ export class TransportEvent {
         return;
     }
 
+    // must be closed after closing input queue
     async close() {
-        await this.amqp.close();
+        console.log('[TransportEvent][close]');
+
+        await Promise.all(
+            [...this.channelMap.values()].map((channel) => channel.close()),
+        );
     }
 }

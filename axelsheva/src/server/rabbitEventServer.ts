@@ -6,6 +6,8 @@ import amqp = require('amqp-connection-manager');
 import { OnEventCallback, Request } from '../types/transport';
 
 export class RabbitEventServer {
+    private inputChannel?: amqp.ChannelWrapper;
+
     constructor(private readonly amqp: amqp.AmqpConnectionManager) {}
 
     async onEvent(queue: string, callback: OnEventCallback) {
@@ -45,5 +47,20 @@ export class RabbitEventServer {
                 message,
             );
         });
+
+        this.inputChannel = channel;
+    }
+
+    async close() {
+        console.log('[RabbitEventServer][close]');
+
+        if (!this.inputChannel) {
+            console.error(
+                '[RabbitEventServer][close] Input channel is not available',
+            );
+            throw new Error();
+        }
+
+        await this.inputChannel.close();
     }
 }
