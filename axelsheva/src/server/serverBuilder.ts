@@ -43,6 +43,8 @@ export const buildQueryServer = async (
             return;
         }
 
+        console.log(`[server][query] res`, res);
+
         try {
             // TODO: check response
             await connection.send({ data: res });

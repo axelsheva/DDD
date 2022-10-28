@@ -1,33 +1,36 @@
-import assert = require('node:assert');
+import { strict as assert } from 'node:assert';
 import { describe, test } from 'node:test';
+import { transport } from '../transport';
 import { TransportQuery } from '../transportQuery';
 
-describe('TransportQuery', () => {
-    const url = 'amqp://localhost:5672';
-
-    test('should be rejected by timeout', async (t) => {
+describe('TransportQuery', async () => {
+    await test('should be rejected by timeout', async () => {
         const serverTestName = `test.${Date.now().toString()}`;
         const serverMethod = 'f1';
         const queryArgs = 'ping';
 
-        const transport = new TransportQuery(
-            url,
+        const transportQuery = new TransportQuery(
             1_000,
             `test.${Date.now().toString()}`,
         );
 
-        await transport.initialize();
+        await transportQuery.initialize();
 
-        assert.rejects(
+        await assert.rejects(
             () =>
-                transport.call<string>({
+                transportQuery.call<string>({
                     args: queryArgs,
                     method: serverMethod,
                     service: serverTestName,
                 }),
-            'timeout',
+            (err: string) => {
+                assert.strictEqual(err, 'timeout');
+                return true;
+            },
         );
 
-        await transport.close();
+        await transportQuery.close();
     });
+
+    await transport.close();
 });
