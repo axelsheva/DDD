@@ -25,17 +25,19 @@ describe('server', () => {
         );
 
         const transportQuery = new TransportQuery(
-            1_000,
+            2_000,
             `test.${Date.now().toString()}`,
         );
 
         await transportQuery.initialize();
 
+        console.time('response');
         const res = await transportQuery.call<string>({
             args: queryArgs,
             method: serverMethod,
             service: serverTestName,
         });
+        console.timeEnd('response');
 
         assert.strictEqual(res, expectedResponse);
 
