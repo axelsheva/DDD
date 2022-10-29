@@ -8,7 +8,9 @@ import { OnEventCallback, Request } from '../types/transport';
 export class RabbitEventServer {
     private inputChannel?: amqp.ChannelWrapper;
 
-    constructor(private readonly amqp: amqp.AmqpConnectionManager) {}
+    constructor(private readonly amqp: amqp.AmqpConnectionManager) {
+        console.log('[RabbitEventServer][constructor]');
+    }
 
     async onEvent(queue: string, callback: OnEventCallback) {
         const channel = this.amqp.createChannel({

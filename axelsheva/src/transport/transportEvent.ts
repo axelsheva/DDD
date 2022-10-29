@@ -40,6 +40,7 @@ export class TransportEvent {
         const channel = await this.getChannel(destination);
 
         const content: Request = {
+            entity: message.entity,
             method: message.method,
             data: message.args,
         };

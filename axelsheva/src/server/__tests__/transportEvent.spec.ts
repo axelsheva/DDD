@@ -2,22 +2,25 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { transport } from '../../transport/transport';
 import { TransportEvent } from '../../transport/transportEvent';
-import { createServer } from '../serverBuilder';
+import { _createServer } from '../serverBuilder';
 
 test('server', async (t) => {
     await t.test('should process event', async () => {
         const serverTestName = `test.${Date.now().toString()}`;
+        const entity = 'user';
         const serverMethod = 'f1';
         const eventArgs = 'ping';
 
-        const server = await createServer(
+        const server = await _createServer(
             {
                 event: {
-                    [serverMethod]: async (args: string) => {
-                        assert.strictEqual(args, eventArgs);
+                    user: {
+                        [serverMethod]: async (args: string) => {
+                            assert.strictEqual(args, eventArgs);
 
-                        await server.close();
-                        await transportEvent.close();
+                            await server.close();
+                            await transportEvent.close();
+                        },
                     },
                 },
             },
@@ -28,6 +31,7 @@ test('server', async (t) => {
 
         await transportEvent.call({
             args: eventArgs,
+            entity,
             method: serverMethod,
             service: serverTestName,
         });

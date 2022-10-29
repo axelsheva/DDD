@@ -1,5 +1,6 @@
 import { Channel } from 'amqp-connection-manager';
 import { randomUUID } from 'crypto';
+import { CONFIG } from '../config';
 import {
     PendingRequest,
     Request,
@@ -18,19 +19,16 @@ export class TransportQuery {
     private readonly pendingRequestMap: Map<string, PendingRequest>;
     private readonly channelMap: Map<string, amqp.ChannelWrapper>;
     private readonly queryResponseQueueName: string;
-    private readonly instanceId: string;
-    private responseChannel?: amqp.ChannelWrapper;
+    private readonly responseChannel: amqp.ChannelWrapper;
+    private readonly timeout: number;
 
-    constructor(private readonly timeout: number, service: string) {
+    constructor() {
         this.pendingRequestMap = new Map();
         this.channelMap = new Map();
+        this.timeout = CONFIG.transport.timeout;
+        this.queryResponseQueueName = `${CONFIG.service.name}.response.query.${CONFIG.service.instanceId}`;
 
-        this.instanceId = Date.now().toString();
-        this.queryResponseQueueName = `${service}.response.query.${this.instanceId}`;
-    }
-
-    async initialize() {
-        const responseChannel = transport.createChannel({
+        this.responseChannel = transport.createChannel({
             json: true,
             setup: (c: Channel) => {
                 return c.assertQueue(this.queryResponseQueueName, {
@@ -38,36 +36,42 @@ export class TransportQuery {
                 });
             },
         });
+    }
 
-        await responseChannel.consume(this.queryResponseQueueName, (item) => {
-            const { correlationId } = item.properties;
+    async initialize() {
+        console.log('[TransportQuery][initialize]');
 
-            const pendingRequest = this.pendingRequestMap.get(correlationId);
-            if (!pendingRequest) {
-                responseChannel.ack(item);
-                return;
-            }
+        await this.responseChannel.consume(
+            this.queryResponseQueueName,
+            (item) => {
+                const { correlationId } = item.properties;
 
-            // TODO: validate schema
-            const message: TransportResponse = JSON.parse(
-                item.content.toString(),
-            );
+                const pendingRequest =
+                    this.pendingRequestMap.get(correlationId);
+                if (!pendingRequest) {
+                    this.responseChannel.ack(item);
+                    return;
+                }
 
-            console.log('[Transport][response]', message);
-            if (message.hasOwnProperty('errorCode')) {
-                pendingRequest.reject(message);
-            } else {
-                pendingRequest.resolve(
-                    (message as TransportSuccessResponse).data,
+                // TODO: validate schema
+                const message: TransportResponse = JSON.parse(
+                    item.content.toString(),
                 );
-            }
 
-            responseChannel.ack(item);
-        });
+                console.log('[Transport][response]', message);
+                if (message.hasOwnProperty('errorCode')) {
+                    pendingRequest.reject(message);
+                } else {
+                    pendingRequest.resolve(
+                        (message as TransportSuccessResponse).data,
+                    );
+                }
 
-        await responseChannel.waitForConnect();
+                this.responseChannel.ack(item);
+            },
+        );
 
-        this.responseChannel = responseChannel;
+        await this.responseChannel.waitForConnect();
     }
 
     // can be race condition for the same queue
@@ -122,6 +126,7 @@ export class TransportQuery {
             });
 
             const content: Request = {
+                entity: message.entity,
                 method: message.method,
                 data: message.args,
             };

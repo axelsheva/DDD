@@ -6,9 +6,10 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "strict": true,
+    "declaration": true,
     "target": "ES2022",
     "outDir": "dist"
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"]
+  "exclude": ["node_modules"]
 }

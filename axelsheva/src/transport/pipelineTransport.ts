@@ -48,6 +48,7 @@ export class PipelineTransport {
         const channel = await this.getChannel(message.service);
 
         const content: Request = {
+            entity: message.entity,
             method: message.method,
             data: message.args,
         };

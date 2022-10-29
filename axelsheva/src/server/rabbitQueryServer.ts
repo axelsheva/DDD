@@ -12,6 +12,8 @@ export class RabbitQueryServer {
     private activeMessages: number;
 
     constructor(private readonly amqp: amqp.AmqpConnectionManager) {
+        console.log('[RabbitQueryServer][constructor]');
+
         this.outputChannel = this.amqp.createChannel({
             json: true,
         });
