@@ -1,6 +1,6 @@
 import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
 import { CONFIG } from '../../config';
-import { transport } from '../transport/transport';
+import { transport } from '../transport/rabbitmq/transport';
 import { RabbitEventServer } from './rabbitEventServer';
 import { RabbitQueryServer } from './rabbitQueryServer';
 import { ServerRouting } from './types';
@@ -146,8 +146,8 @@ export const _createServer = async (
     };
 };
 
-export const rabbit = async (routing: Routing, port?: number) => {
-    await _createServer(
+export const rabbit = (routing: Routing) => {
+    void _createServer(
         {
             query: routing,
             event: routing,

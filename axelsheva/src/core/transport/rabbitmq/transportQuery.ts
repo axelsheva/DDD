@@ -1,13 +1,13 @@
 import { Channel } from 'amqp-connection-manager';
 import { randomUUID } from 'crypto';
+import { sleep } from '../../../utils/sleep';
 import {
     PendingRequest,
     Request,
     SendMessageArgs,
     TransportResponse,
     TransportSuccessResponse,
-} from '../types/transport';
-import { sleep } from '../utils/sleep';
+} from '../../types/transport';
 import { transport } from './transport';
 import amqp = require('amqp-connection-manager');
 
@@ -24,7 +24,7 @@ export class TransportQuery {
     constructor(config: Config) {
         this.pendingRequestMap = new Map();
         this.channelMap = new Map();
-        this.timeout = config.transport.timeout;
+        this.timeout = config.messageBroker.timeout;
         this.queryResponseQueueName = `${config.service.name}.response.query.${config.service.instanceId}`;
 
         this.responseChannel = transport.createChannel({

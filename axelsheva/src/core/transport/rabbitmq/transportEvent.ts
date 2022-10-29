@@ -1,5 +1,5 @@
 import { Channel } from 'amqp-connection-manager';
-import { Request, SendMessageArgs } from '../types/transport';
+import { Request, SendMessageArgs } from '../../types/transport';
 import { transport } from './transport';
 import amqp = require('amqp-connection-manager');
 

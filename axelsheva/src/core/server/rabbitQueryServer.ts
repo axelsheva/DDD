@@ -3,7 +3,6 @@
  */
 
 import amqp = require('amqp-connection-manager');
-import { sleep } from '../../utils/sleep';
 import { OnRequestCallback, Request } from '../types/transport';
 
 export class RabbitQueryServer {
@@ -99,7 +98,7 @@ export class RabbitQueryServer {
                 `[RabbitQueryServer][close] Active messages: ${this.activeMessages}, wait...`,
             );
 
-            await sleep(200);
+            await utils.sleep(200);
         }
 
         await this.outputChannel.close();
