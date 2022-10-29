@@ -1,8 +1,9 @@
 import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
+import { CONFIG } from '../config';
 import { transport } from '../transport/transport';
 import { RabbitEventServer } from './rabbitEventServer';
 import { RabbitQueryServer } from './rabbitQueryServer';
-import { Routing, ServerRouting } from './types';
+import { ServerRouting } from './types';
 
 export const buildQueryServer = async (
     routing: Routing,
@@ -13,7 +14,15 @@ export const buildQueryServer = async (
     const queue = `${serviceName}.rpc.query`;
 
     await server.onRequest(queue, async (connection, message) => {
-        const handler = routing[message.method];
+        const entity = routing[message.entity];
+        if (!entity) {
+            console.error(
+                `[Server][onEvent] Entity not found: ${message.entity}`,
+            );
+            return;
+        }
+
+        const handler = entity[message.method];
         if (!handler) {
             console.error(
                 `[Server][onRequest] Handler not found for method: ${message.method}`,
@@ -70,7 +79,15 @@ export const buildEventServer = async (
     const queue = `${serviceName}.event`;
 
     await server.onEvent(queue, async (connection, message) => {
-        const handler = routing[message.method];
+        const entity = routing[message.entity];
+        if (!entity) {
+            console.error(
+                `[Server][onEvent] Entity not found: ${message.entity}`,
+            );
+            return;
+        }
+
+        const handler = entity[message.method];
         if (!handler) {
             console.error(
                 `[Server][onEvent] Handler not found for method: ${message.method}`,
@@ -99,7 +116,7 @@ export const buildEventServer = async (
     };
 };
 
-export const createServer = async (
+export const _createServer = async (
     routing: ServerRouting,
     serviceName: string,
 ) => {
@@ -127,4 +144,14 @@ export const createServer = async (
     return {
         close: () => Promise.all(servers.map((server) => server.close())),
     };
+};
+
+export const rabbit = async (routing: Routing, port?: number) => {
+    await _createServer(
+        {
+            query: routing,
+            event: routing,
+        },
+        CONFIG.service.name,
+    );
 };

@@ -15,11 +15,13 @@ export type Connection = {
 
 export type SendMessageArgs = {
     service: string;
+    entity: string;
     method: string;
     args: any;
 };
 
 export type Request = {
+    entity: string;
     method: string;
     data: any;
 };

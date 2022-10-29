@@ -2,22 +2,25 @@ import { strict as assert } from 'node:assert';
 import { describe, test } from 'node:test';
 import { transport } from '../../transport/transport';
 import { TransportQuery } from '../../transport/transportQuery';
-import { createServer } from '../serverBuilder';
+import { _createServer } from '../serverBuilder';
 
 describe('server', () => {
     test('should process query', async (t) => {
         const serverTestName = `test.${Date.now().toString()}`;
+        const entity = 'user';
         const serverMethod = 'f1';
         const expectedResponse = 'pong';
         const queryArgs = 'ping';
 
-        const server = await createServer(
+        const server = await _createServer(
             {
                 query: {
-                    [serverMethod]: (args: string) => {
-                        assert.strictEqual(args, queryArgs);
+                    user: {
+                        [serverMethod]: (args: string) => {
+                            assert.strictEqual(args, queryArgs);
 
-                        return expectedResponse;
+                            return expectedResponse;
+                        },
                     },
                 },
             },
@@ -34,6 +37,7 @@ describe('server', () => {
         console.time('response');
         const res = await transportQuery.call<string>({
             args: queryArgs,
+            entity,
             method: serverMethod,
             service: serverTestName,
         });

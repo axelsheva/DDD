@@ -6,6 +6,7 @@ import { TransportQuery } from '../transportQuery';
 describe('TransportQuery', async () => {
     await test('should be rejected by timeout', async () => {
         const serverTestName = `test.${Date.now().toString()}`;
+        const entity = 'f1';
         const serverMethod = 'f1';
         const queryArgs = 'ping';
 
@@ -20,6 +21,7 @@ describe('TransportQuery', async () => {
             () =>
                 transportQuery.call<string>({
                     args: queryArgs,
+                    entity,
                     method: serverMethod,
                     service: serverTestName,
                 }),
