@@ -1,6 +1,6 @@
 import { Channel } from 'amqp-connection-manager';
 import { randomUUID } from 'crypto';
-import { Request, SendMessageArgs } from '../types/transport';
+import { Request, SendMessageArgs } from '../../types/transport';
 import amqp = require('amqp-connection-manager');
 
 // Отправляет сообщение на обработку сервису обработчику и не ожидает ответа

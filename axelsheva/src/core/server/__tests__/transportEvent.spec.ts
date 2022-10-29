@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { transport } from '../../transport/transport';
-import { TransportEvent } from '../../transport/transportEvent';
+import { transport } from '../../transport/rabbitmq/transport';
+import { TransportEvent } from '../../transport/rabbitmq/transportEvent';
 import { _createServer } from '../serverBuilder';
 
 test('server', async (t) => {

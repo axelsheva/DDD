@@ -1,5 +1,7 @@
+const user = db('user');
+
 ({
     get: async (id: number) => {
-        return await db('user').get(id);
+        return await user.get(id);
     },
 });

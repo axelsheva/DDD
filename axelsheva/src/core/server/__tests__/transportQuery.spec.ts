@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { describe, test } from 'node:test';
-import { transport } from '../../transport/transport';
-import { TransportQuery } from '../../transport/transportQuery';
+import { transport } from '../../transport/rabbitmq/transport';
+import { TransportQuery } from '../../transport/rabbitmq/transportQuery';
 import { _createServer } from '../serverBuilder';
 import { buildConfig } from './test';
 

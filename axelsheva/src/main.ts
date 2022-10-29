@@ -1,15 +1,15 @@
 import { promises as fs } from 'node:fs';
 import { CONFIG } from './config';
-import { rabbit } from './core/server/serverBuilder';
-import http from './core/transport/http';
-import { TransportQuery } from './core/transport/rabbitmq/transportQuery';
 import db from './core/db';
 import load from './core/load';
+import http from './core/server/http';
+import { rabbit } from './core/server/serverBuilder';
+import { TransportQuery } from './core/transport/rabbitmq/transportQuery';
 import { sleep } from './utils/sleep';
 import path = require('path');
 
 const sandbox = {
-    db: Object.freeze(db),
+    db: Object.freeze(db(CONFIG.db)),
     transport: {
         query: new TransportQuery(CONFIG),
     },
@@ -30,7 +30,10 @@ const routing: Routing = {};
         if (!fileName.endsWith(extension)) continue;
         const filePath = path.join(apiPath, fileName);
         const serviceName = path.basename(fileName, extension);
-        routing[serviceName] = await load(filePath, sandbox);
+        routing[serviceName] = await load(CONFIG.sandbox)(
+            filePath,
+            CONFIG.sandbox,
+        );
 
         console.log(
             `[API] loaded: ${serviceName}, methods: ${Object.keys(
@@ -41,6 +44,6 @@ const routing: Routing = {};
 
     await sandbox.transport.query.initialize();
 
-    http(routing, 8888);
-    await rabbit(routing);
+    http(routing, CONFIG.api.port);
+    rabbit(routing);
 })();
