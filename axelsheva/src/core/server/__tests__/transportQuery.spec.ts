@@ -3,10 +3,12 @@ import { describe, test } from 'node:test';
 import { transport } from '../../transport/transport';
 import { TransportQuery } from '../../transport/transportQuery';
 import { _createServer } from '../serverBuilder';
+import { buildConfig } from './test';
 
 describe('server', () => {
     test('should process query', async (t) => {
-        const serverTestName = `test.${Date.now().toString()}`;
+        const config = buildConfig();
+
         const entity = 'user';
         const serverMethod = 'f1';
         const expectedResponse = 'pong';
@@ -24,13 +26,10 @@ describe('server', () => {
                     },
                 },
             },
-            serverTestName,
+            config.service.name,
         );
 
-        const transportQuery = new TransportQuery(
-            2_000,
-            `test.${Date.now().toString()}`,
-        );
+        const transportQuery = new TransportQuery(config);
 
         await transportQuery.initialize();
 
@@ -39,7 +38,7 @@ describe('server', () => {
             args: queryArgs,
             entity,
             method: serverMethod,
-            service: serverTestName,
+            service: config.service.name,
         });
         console.timeEnd('response');
 

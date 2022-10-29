@@ -1,6 +1,5 @@
 import { Channel } from 'amqp-connection-manager';
 import { randomUUID } from 'crypto';
-import { CONFIG } from '../config';
 import {
     PendingRequest,
     Request,
@@ -22,11 +21,11 @@ export class TransportQuery {
     private readonly responseChannel: amqp.ChannelWrapper;
     private readonly timeout: number;
 
-    constructor() {
+    constructor(config: Config) {
         this.pendingRequestMap = new Map();
         this.channelMap = new Map();
-        this.timeout = CONFIG.transport.timeout;
-        this.queryResponseQueueName = `${CONFIG.service.name}.response.query.${CONFIG.service.instanceId}`;
+        this.timeout = config.transport.timeout;
+        this.queryResponseQueueName = `${config.service.name}.response.query.${config.service.instanceId}`;
 
         this.responseChannel = transport.createChannel({
             json: true,

@@ -1,17 +1,22 @@
 import { promises as fs } from 'node:fs';
-import db from './db';
-import http from './http';
-import load from './load';
-import { rabbit } from './server/serverBuilder';
-import { TransportQuery } from './transport/transportQuery';
+import { CONFIG } from './config';
+import { rabbit } from './core/server/serverBuilder';
+import http from './core/transport/http';
+import { TransportQuery } from './core/transport/rabbitmq/transportQuery';
+import db from './core/db';
+import load from './core/load';
+import { sleep } from './utils/sleep';
 import path = require('path');
 
 const sandbox = {
     db: Object.freeze(db),
     transport: {
-        query: new TransportQuery(),
+        query: new TransportQuery(CONFIG),
     },
     console,
+    utils: {
+        sleep,
+    },
 };
 
 const extension = __dirname.endsWith('dist') ? '.js' : '.ts';
