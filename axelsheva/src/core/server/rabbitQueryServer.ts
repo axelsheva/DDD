@@ -3,8 +3,8 @@
  */
 
 import amqp = require('amqp-connection-manager');
+import { sleep } from '../../utils/sleep';
 import { OnRequestCallback, Request } from '../types/transport';
-import { sleep } from '../utils/sleep';
 
 export class RabbitQueryServer {
     private inputChannel?: amqp.ChannelWrapper;

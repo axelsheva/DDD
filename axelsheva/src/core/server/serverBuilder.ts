@@ -1,5 +1,5 @@
 import { IAmqpConnectionManager } from 'amqp-connection-manager/dist/esm/AmqpConnectionManager';
-import { CONFIG } from '../config';
+import { CONFIG } from '../../config';
 import { transport } from '../transport/transport';
 import { RabbitEventServer } from './rabbitEventServer';
 import { RabbitQueryServer } from './rabbitQueryServer';

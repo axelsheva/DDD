@@ -7,8 +7,6 @@ declare const transport: {
     query: any;
 };
 
-declare var dbTable: DBTable;
-
 type Routing = Record<string, Record<string, Function | undefined>>;
 
 type Config = {
