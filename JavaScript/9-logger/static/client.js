@@ -61,7 +61,8 @@ const scaffold = (url, structure) => {
     const service = structure[serviceName];
     const methods = Object.keys(service);
     for (const methodName of methods) {
-      api[serviceName][methodName] = (...args) => transport(url, serviceName, methodName, args);
+      api[serviceName][methodName] = (...args) =>
+        transport(url, serviceName, methodName, args);
     }
   }
   return api;
